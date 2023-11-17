@@ -3,6 +3,7 @@
  * @module view/widget/archives
  */
 const { Component } = require('inferno');
+const { toMomentLocale } = require('hexo/lib/plugins/helper/date');
 const { cacheComponent } = require('../../util/cache');
 
 /**
@@ -76,29 +77,22 @@ class Archives extends Component {
  *         url_for: function() {...},
  *         _p: function() {...}
  *     }}
- *     type="monthly"
+ *     group_by="monthly"
  *     order={-1}
  *     showCount={true}
  *     format="MMMM YYYY" />
  */
 Archives.Cacheable = cacheComponent(Archives, 'widget.archives', (props) => {
-  const {
-    site,
-    config,
-    page,
-    helper,
-    type = 'monthly',
-    order = -1,
-    showCount = true,
-    format = null,
-  } = props;
+  const { site, config, page, helper, widget } = props;
+  const { group_by = 'monthly', order = -1, showCount = true, format = null } = widget;
+
   const { url_for, _p } = helper;
   const posts = site.posts.sort('date', order);
   if (!posts.length) {
     return null;
   }
 
-  const language = page.lang || page.language || config.language;
+  const language = toMomentLocale(page.lang || page.language || config.language);
 
   const data = [];
   let length = 0;
@@ -116,7 +110,7 @@ Archives.Cacheable = cacheComponent(Archives, 'widget.archives', (props) => {
 
     const year = date.year();
     const month = date.month() + 1;
-    const name = date.format(format || type === 'monthly' ? 'MMMM YYYY' : 'YYYY');
+    const name = date.format(format || (group_by === 'monthly' ? 'MMMM YYYY' : 'YYYY'));
     const lastData = data[length - 1];
 
     if (!lastData || lastData.name !== name) {
@@ -134,7 +128,7 @@ Archives.Cacheable = cacheComponent(Archives, 'widget.archives', (props) => {
   const link = (item) => {
     let url = `${config.archive_dir}/${item.year}/`;
 
-    if (type === 'monthly') {
+    if (group_by === 'monthly') {
       if (item.month < 10) url += '0';
       url += `${item.month}/`;
     }
